@@ -50,20 +50,6 @@ class RemarksService:
             if check_remark_answer:
                 raise RemarkAnswerIsExistsExc
 
-            check_user_object: UserObjectAccess | None = await uow.user_object_access.find_one_or_none(
-                user_id=user.id,
-                object_id=object_id
-            )
-            if not check_user_object or not check_user_object.is_active:
-                raise UserIsNotActivatedExc
-
-            if (
-                check_user_object.access_expires_at 
-                and check_user_object.access_expires_at < datetime.now(UTC)
-            ):
-                await uow.user_object_access.delete_by_filter(user_id=user.id, object_id=object_id)
-                raise UserIsNotActivatedExc
-
             new_answer = RemarkAnswer(
                 remark_item_id=remark_id,
                 comment=remark_data.comment
