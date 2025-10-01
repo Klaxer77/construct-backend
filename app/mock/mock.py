@@ -9,11 +9,11 @@ from app.config.main import settings
 from app.models.company import Company
 from app.models.control_materials import CategoriesMaterials
 from app.models.objects import ObjectsCategories
-from app.models.users import User
+from app.models.users import User, UserObjectAccess
 from app.repositories.company import CompanyRepository
 from app.repositories.control_materials import CategoriesMaterialsRepository
 from app.repositories.objects import ObjectsCategoriesRepository
-from app.repositories.users import UsersRepository
+from app.repositories.users import UserObjectAccessRepository, UsersRepository
 
 
 def open_mock_json(model: str):
@@ -34,11 +34,11 @@ async def init_app():
     object_categories = open_mock_json("object_categories")
     categories_materials = open_mock_json("categories_materials")
     
-    # if settings.MODE == "PROD":
-    #     users_object_access = open_mock_json("users_object_access")
+    if settings.MODE == "PROD":
+        users_object_access = open_mock_json("users_object_access")
         
-    #     for user_object_access in users_object_access:
-    #         user_object_access["access_expires_at"] = datetime.strptime(user_object_access["access_expires_at"], "%Y-%m-%dT%H:%M:%S.%f%z") #noqa
+        for user_object_access in users_object_access:
+            user_object_access["access_expires_at"] = datetime.strptime(user_object_access["access_expires_at"], "%Y-%m-%dT%H:%M:%S.%f%z") #noqa
     
     for category_material in categories_materials:
         category_material["date_from"] = datetime.strptime(category_material["date_from"], "%Y-%m-%dT%H:%M:%S.%f%z")
@@ -73,12 +73,12 @@ async def init_app():
             if not find_category_material:
                 await session.execute(insert(CategoriesMaterials).values(category_material))
         
-        # if settings.MODE == "PROD":        
-        #     for user_object_access in users_object_access:
-        #         find_user_object_access = await UserObjectAccessRepository(session).find_one_or_none(
-        #             id=user_object_access["id"]
-        #             )
-        #         if not find_user_object_access:
-        #             await session.execute(insert(UserObjectAccess).values(user_object_access))
+        if settings.MODE == "PROD":        
+            for user_object_access in users_object_access:
+                find_user_object_access = await UserObjectAccessRepository(session).find_one_or_none(
+                    id=user_object_access["id"]
+                    )
+                if not find_user_object_access:
+                    await session.execute(insert(UserObjectAccess).values(user_object_access))
         
         await session.commit()
