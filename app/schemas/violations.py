@@ -61,7 +61,7 @@ class SViolationSubDetail(BaseModel):
     id: uuid.UUID
     violations: str
     name_regulatory_docx: str
-    comment: str
+    comment: str | None
     status: ViolationStatusEnum
     expiration_date: datetime
     photos: list[SViolationPhotos]  
