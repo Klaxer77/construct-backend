@@ -74,6 +74,9 @@ class ViolationsService:
                     uow.session.add(file_record)
                     saved_files.append(file_record)
 
+            await uow.violations_item.update_by_filter({
+                "status": ViolationStatusEnum.REVIEW
+            }, id=vialation_id)
             await uow.commit()
 
             return SVialationAnswer(

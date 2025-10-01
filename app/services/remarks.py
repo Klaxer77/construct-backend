@@ -74,6 +74,9 @@ class RemarksService:
                     uow.session.add(file_record)
                     saved_files.append(file_record)
 
+            await uow.remarks_item.update_by_filter({
+                "status": RemarkStatusEnum.REVIEW
+            }, id=remark_id)
             await uow.commit()
 
             return SRemarkAnswer(
