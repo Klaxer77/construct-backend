@@ -118,6 +118,7 @@ class ViolationsService:
                     {"status": ViolationStatusEnum.NOT_FIXED},
                     id=violation_id
                 )
+                await uow.violation_answer.delete_by_filter(violation_item_id=violation_id)
 
             all_items: list[ViolationsItem] = await uow.violations_item.find_all(
                 violations_id=check_violation.violations_id

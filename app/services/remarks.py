@@ -119,6 +119,7 @@ class RemarksService:
                     {"status": RemarkStatusEnum.NOT_FIXED},
                     id=remark_id
                 )
+                await uow.remark_answer.delete_by_filter(remark_item_id=remark_id)
 
             all_items: list[RemarksItem] = await uow.remarks_item.find_all(
                 remarks_id=check_remark.remarks_id
