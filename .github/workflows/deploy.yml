@@ -1,0 +1,57 @@
+name: Deploy prod
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  deploy:
+    runs-on: [self-hosted]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create prod env file
+        run: |
+          touch ./environments/.env.prod.docker
+          echo "${{secrets.PROD_ENV}}" >> ./environments/.env.prod.docker
+
+      - name: Build Docker images
+        run: |
+          docker compose -f docker-compose.prod.yml build
+        
+      - name: Remove Old containers
+        run: |
+          docker compose -f docker-compose.prod.yml down
+      - name: Start new containers
+        run: |
+          docker compose -f docker-compose.prod.yml up -d
+
+      - name: Print logs for unhealthy containers
+        if: failure()
+        run: |
+          echo "Startup failed. Checking for unhealthy containers..."
+          unhealthy=$(docker ps --filter "health=unhealthy" --format "{{.Names}}")
+          if [ -z "$unhealthy" ]; then
+              echo "No unhealthy containers found."
+          else
+              echo "Unhealthy containers detected: $unhealthy"
+              for container in $unhealthy; do
+              echo "Logs for $container:"
+              docker logs "$container"
+              done
+          fi
+
+          errored=$(docker ps -a --filter "status=exited" --format "{{.Names}}")
+          if [ -z "$errored" ]; then
+              echo "No errored containers found."
+          else
+              echo "Errored containers detected: $errored"
+              for container in $errored; do
+              echo "Logs for $container:"
+              docker logs "$container"
+              done
+          fi

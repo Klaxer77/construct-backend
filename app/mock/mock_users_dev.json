@@ -1,0 +1,32 @@
+[
+    {
+        "id": "bd86fb17-58fa-4df8-94c3-ee2d0a0e2277",
+        "using_id": 3846091836,
+        "avatar": null,
+        "fio": "Голузин Иван Александрович",
+        "email": "goluzin-vanya@mail.ru",
+        "password": "$2a$10$6Xo0gFWKJRX2i.P6AyCO3evLj7u08bBwAllQsPmFs33t7NKacSSCa",
+        "role": "construction_control",
+        "company_id": "fbf3e653-740d-4433-a8ab-ce2ac8aa37f4"
+    },
+    {
+        "id": "1534f050-7c9a-4548-9401-00645f6ce414",
+        "using_id": 6289123654,
+        "avatar": null,
+        "fio": "Голузин Дмитрий Александрович",
+        "email": "goluzin-dima@mail.ru",
+        "password": "$2a$10$6Xo0gFWKJRX2i.P6AyCO3evLj7u08bBwAllQsPmFs33t7NKacSSCa",
+        "role": "contractor",
+        "company_id": "d09baafe-bdf9-44c9-b9f7-6b15c32a22b7"
+    },
+    {
+        "id": "d206f951-e153-441e-b6bf-9ec7f826bcb1",
+        "using_id": 6541239874,
+        "avatar": null,
+        "fio": "Феоктистов Алексей Феоктистович",
+        "email": "feoktictov-aleksey@mail.ru",
+        "password": "$2a$10$6Xo0gFWKJRX2i.P6AyCO3evLj7u08bBwAllQsPmFs33t7NKacSSCa",
+        "role": "inspection",
+        "company_id": "b1a3b183-0153-4a48-a3ca-855c80bd3b64"
+    }
+]
