@@ -230,7 +230,18 @@ class RemarksService:
             uow.session.add(remarks_container)
             await uow.session.flush()
 
+            # --- ОТЛАДКА файлов ---
+            print("=== Received files ===") #noqa
+            for f in files:
+                print(f"filename: {f.filename}, type: {f.content_type}") #noqa
+
             files_map = {file.filename: file for file in files} if files else {}
+            print("=== Files map keys ===", list(files_map.keys())) #noqa
+            
+            for remark_data in data:
+                print("\n--- Remark data ---") #noqa
+                print("violations:", remark_data.violations) #noqa
+                print("photos_keys:", remark_data.photos_keys) #noqa
 
             for remark_data in data:
                 remark_item = RemarksItem(
@@ -250,6 +261,7 @@ class RemarksService:
                 for key in remark_data.photos_keys:
                     upload_file = files_map.get(key)
                     if upload_file:
+                        print(f"✅ Found file for key: {key} -> filename: {upload_file.filename}") #noqa
                         path_folder = "images/remarks"
                         ext = upload_file.filename.split(".")[-1].lower()
                         object_name = f"{path_folder}/{uuid.uuid4()}.{ext}"
@@ -258,6 +270,8 @@ class RemarksService:
 
                         photo = RemarkPhoto(file_path=url, remark_item=remark_item)
                         uow.session.add(photo)
+                    else:
+                        print(f"⚠ File NOT found for key: {key}") #noqa
 
             await uow.commit()
 
