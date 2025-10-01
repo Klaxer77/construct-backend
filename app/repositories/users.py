@@ -54,13 +54,13 @@ class UsersRepository(SQLAlchemyRepository):
         stmt = (
             select(
                 func.ST_Contains(
-                    func.cast(func.ST_Buffer(func.cast(Objects.geom, Geography), 50), Geometry),
+                    func.cast(func.ST_Buffer(func.cast(Objects.geom, Geography), 150), Geometry),
                     func.ST_SetSRID(func.ST_MakePoint(lon, lat), 4326)
                 ).label("allowed")
             )
             .where(Objects.id == object_id)
         )
-        # допускаем погрешность в 50м
+        # допускаем погрешность в 150м
         result = await self.session.execute(stmt)
         allowed = result.scalar()
         return bool(allowed)
