@@ -19,6 +19,18 @@ class ActNotFoundExc(BaseHTTPException):
     status_code = status.HTTP_404_NOT_FOUND
     message = "Act object not found"
     
+class CheckListNotFoundExc(BaseHTTPException):
+    status_code = status.HTTP_404_NOT_FOUND
+    message = "Check list object not found"
+    
+class CheckListIsAcceptExc(BaseHTTPException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "Check list is accept"
+    
+class CheckListObjectIsNotExistsExc(BaseHTTPException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "Check list is not exists"
+    
 class ObjectActNotRequiredExc(BaseHTTPException):
     status_code = status.HTTP_400_BAD_REQUEST
     message = "Object act not required"

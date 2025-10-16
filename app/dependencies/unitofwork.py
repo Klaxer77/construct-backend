@@ -8,8 +8,9 @@ from app.repositories.control_materials import CategoriesMaterialsRepository, Ma
 from app.repositories.images import ImagesRepository
 from app.repositories.nfc import HistoryObjectNFCRepository, ObjectNFCRepository
 from app.repositories.objects import (
-    ActDocumentRepository,
     ActsRepository,
+    CheckListDocumentRepository,
+    CheckListRepository,
     ObjectsCategoriesRepository,
     ObjectsRepository,
 )
@@ -45,7 +46,7 @@ class UnitOfWork:
         self.objects = ObjectsRepository(self.session)
         self.objects_categories = ObjectsCategoriesRepository(self.session)
         self.acts = ActsRepository(self.session)
-        self.act_document = ActDocumentRepository(self.session)
+        self.check_list_document = CheckListDocumentRepository(self.session)
         self.object_nfc = ObjectNFCRepository(self.session)
         self.history_object_nfc = HistoryObjectNFCRepository(self.session)
         self.remark_photo = RemarkPhotoRepository(self.session)
@@ -61,6 +62,7 @@ class UnitOfWork:
         self.remark_answer_file = RemarkAnswerFileRepository(self.session)
         self.violation_answer = ViolationAnswerRepository(self.session)
         self.violation_answer_file = ViolationAnswerFileRepository(self.session)
+        self.check_list = CheckListRepository(self.session)
         
     async def __aexit__(self, *args):
         await self.rollback()

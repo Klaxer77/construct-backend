@@ -6,11 +6,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.models.enums import ObjectTypeEnum, ObjectTypeFilter, UserRoleEnum
-from app.models.objects import ActDocument, Acts, Objects, ObjectsCategories
+from app.models.objects import Acts, CheckList, CheckListDocument, Objects, ObjectsCategories
 from app.models.users import User
 from app.repositories.base import SQLAlchemyRepository
 from app.schemas.objects import SObjectDetail
 from app.schemas.users import SUserCurrentSubObject
+
+
+class CheckListRepository(SQLAlchemyRepository):
+    model = CheckList
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
 
 class ActsRepository(SQLAlchemyRepository):
@@ -19,24 +26,24 @@ class ActsRepository(SQLAlchemyRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
         
-    async def get_act_detail(self, object_id: uuid.UUID) -> Acts | None:
+    async def get_check_list_detail(self, object_id: uuid.UUID) -> CheckList | None:
         stmt = (
-            select(Acts)
+            select(CheckList)
             .options(
-                selectinload(Acts.documents),
-                joinedload(Acts.object)
+                selectinload(CheckList.documents),
+                joinedload(CheckList.object)
                     .joinedload(Objects.responsible_user),
-                joinedload(Acts.object)
+                joinedload(CheckList.object)
                     .joinedload(Objects.contractor)
             )
-            .where(Acts.object_id == object_id)
+            .where(CheckList.object_id == object_id)
         )
 
         result = await self.session.execute(stmt)
         return result.scalars().first()
         
-class ActDocumentRepository(SQLAlchemyRepository):
-    model = ActDocument
+class CheckListDocumentRepository(SQLAlchemyRepository):
+    model = CheckListDocument
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -58,6 +65,7 @@ class ObjectsRepository(SQLAlchemyRepository):
             .options(
                 joinedload(Objects.remarks_items),
                 joinedload(Objects.act),
+                joinedload(Objects.check_list),
                 joinedload(Objects.responsible_user),
                 selectinload(Objects.nfc_items)
             )

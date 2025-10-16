@@ -5,7 +5,7 @@ from fastapi import UploadFile
 
 from app.dependencies.unitofwork import UnitOfWork
 from app.exceptions.objects import ObjectNotFoundExc
-from app.exceptions.users import InvalidCoordsUserExc, UserIsNotActivatedExc
+from app.exceptions.users import UserIsNotActivatedExc
 from app.exceptions.violations import ViolationAnswerIsExistsExc, ViolationNotFoundExc
 from app.models.enums import ViolationActionEnum, ViolationStatusEnum
 from app.models.objects import Objects
@@ -187,24 +187,35 @@ class ViolationsService:
             check_object: Objects | None = await uow.objects.find_one_or_none(id=object_id)
             if not check_object:
                 raise ObjectNotFoundExc
-            
-            check_user_object: UserObjectAccess | None = await uow.user_object_access.find_one_or_none(
-                user_id=user.id,
-                object_id=object_id
-            )
-            if not check_user_object:
-                raise UserIsNotActivatedExc
-            
-            if check_user_object.is_active == False:  #noqa
-                raise UserIsNotActivatedExc
-            
-            if check_user_object.access_expires_at and check_user_object.access_expires_at < datetime.now(UTC):
-                await uow.user_object_access.delete_by_filter(user_id=user.id, object_id=object_id)
-                raise UserIsNotActivatedExc
-            
-            validate_coords: bool = await uow.users.validate_coords(check_object.id, latitude, longitude)
+
+            coords_valid = not (latitude == 0.00 and longitude == 0.00)
+
+            validate_coords = False
+            if coords_valid:
+                validate_coords = await uow.users.validate_coords(
+                    check_object.id, latitude, longitude
+                )
+
             if not validate_coords:
-                raise InvalidCoordsUserExc
+                check_user_object: UserObjectAccess | None = await uow.user_object_access.find_one_or_none(
+                    user_id=user.id,
+                    object_id=object_id
+                )
+                if not check_user_object:
+                    raise UserIsNotActivatedExc
+
+                if check_user_object.is_active is False:
+                    raise UserIsNotActivatedExc
+
+                if (
+                    check_user_object.access_expires_at
+                    and check_user_object.access_expires_at < datetime.now(UTC)
+                ):
+                    await uow.user_object_access.delete_by_filter(
+                        user_id=user.id,
+                        object_id=object_id
+                    )
+                    raise UserIsNotActivatedExc
 
             created: list[ViolationsItem] = []
 

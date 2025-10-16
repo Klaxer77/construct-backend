@@ -6,8 +6,10 @@ from app.dependencies.unitofwork import UnitOfWork
 from app.exceptions.company import CompanyNotFoundExc
 from app.exceptions.objects import (
     ActNotFoundExc,
-    ActObjectIsExistsExc,
     ActObjectIsNotExistsExc,
+    CheckListIsAcceptExc,
+    CheckListNotFoundExc,
+    CheckListObjectIsNotExistsExc,
     ObjectActNotRequiredExc,
     ObjectCategoryNotFoundExc,
     ObjectNotFoundExc,
@@ -17,18 +19,21 @@ from app.models.company import Company
 from app.models.enums import (
     ActObjectsActionEnum,
     ActStatusEnum,
+    ChecklistObjectsActionEnum,
+    CheckListStatusEnum,
     ObjectStatusesEnum,
     ObjectTypeEnum,
     ObjectTypeFilter,
     UserRoleEnum,
 )
-from app.models.objects import Acts, Objects, ObjectsCategories
+from app.models.objects import Acts, CheckList, Objects, ObjectsCategories
 from app.models.users import User
 from app.schemas.objects import (
     SActCreate,
-    SActDetail,
     SActSuccessCreated,
     SCategoriesObjects,
+    SCheckListDetail,
+    SCheckListSuccessCreated,
     SCountObjects,
     SObject,
     SObjectCreate,
@@ -38,9 +43,7 @@ from app.schemas.objects import (
     SObjectUpdated,
 )
 from app.utils.create_geom import create_geom_from_coords
-from app.utils.generate_nfc_uid import generate_nfc_uid
 from app.utils.generate_using_id import using_id
-from app.utils.nfc_label import number_to_label_nfc
 
 
 class ObjectsService:
@@ -57,27 +60,36 @@ class ObjectsService:
             if not check_object:
                 raise ObjectNotFoundExc
             
+            if latitude == 0.00 and longitude == 0.00:
+                raise InvalidCoordsUserExc
+            
             validate_coords: bool = await uow.users.validate_coords(check_object.id, latitude, longitude)
             if not validate_coords:
                 raise InvalidCoordsUserExc
             
             return SObjectGEOCheck.model_validate({"result": "success"})
     
-    async def object_check_list(self, uow: UnitOfWork, object_id: uuid.UUID) -> SActDetail:
+    async def object_check_list(self, uow: UnitOfWork, object_id: uuid.UUID) -> SCheckListDetail:
         async with uow:
             check_object: Objects | None = await uow.objects.find_one_or_none(id=object_id)
             if not check_object:
                 raise ObjectNotFoundExc
             
-            act = await uow.acts.get_act_detail(object_id)
-            if not act:
+            check_list = await uow.acts.get_check_list_detail(object_id)
+            if not check_list:
                 raise ActObjectIsNotExistsExc
 
-            dto = SActDetail.model_validate(act).model_dump()
-            dto["responsible_fio"] = act.object.responsible_user.fio if act.object and act.object.responsible_user else None #noqa
-            dto["contractor_title"] = act.object.contractor.title if act.object and act.object.contractor else None #noqa
-            
-            return SActDetail(**dto)
+            dto = SCheckListDetail.model_validate(check_list).model_dump()
+            dto["responsible_fio"] = (
+                check_list.object.responsible_user.fio
+                if check_list.object and check_list.object.responsible_user else None
+            )
+            dto["contractor_title"] = (
+                check_list.object.contractor.title
+                if check_list.object and check_list.object.contractor else None
+            )
+
+            return SCheckListDetail(**dto)
     
     async def get_object_detail(self, uow: UnitOfWork, object_id: uuid.UUID) -> SObjectDetail:
         async with uow:
@@ -109,16 +121,68 @@ class ObjectsService:
             object_name = f"{path_folder}/{uuid.uuid4()}.{ext}"
             url = await uow.images.upload_any_file(upload_file, object_name)
             
-            await uow.objects.update_by_filter({
-                "status": ObjectStatusesEnum.PLAN,
-                "object_type": ObjectTypeEnum.ACTIVE
-            }, id=object_id)
             updated_act = await uow.acts.update_by_filter({
                 "file_url": url,
+                "status": ActStatusEnum.AWAITING,
             }, id=get_act.id)
+            await uow.objects.update_by_filter({
+                "object_type": ObjectTypeEnum.AGREEMENT
+            }, id=object_id)
             
             await uow.commit()
             return SActSuccessCreated.model_validate(updated_act)
+        
+    async def checklist_change(
+        self, 
+        uow: UnitOfWork, 
+        object_id: uuid.UUID, 
+        action: ChecklistObjectsActionEnum
+        ) -> SObjectUpdated:
+        async with uow:
+            updated_object = None
+            
+            check_object: Objects | None = await uow.objects.find_one_or_none(id=object_id)
+            if not check_object:
+                raise ObjectNotFoundExc
+            
+            get_checklist: CheckList | None = await uow.check_list.find_one_or_none(object_id=check_object.id)
+            if not get_checklist:
+                raise CheckListNotFoundExc
+            
+            if action == ChecklistObjectsActionEnum.ACCEPT:
+                check_act_status: Acts | None = await uow.acts.find_one_or_none(
+                    object_id=object_id,
+                    status=ActStatusEnum.REQUIRED
+                )
+                if check_act_status:
+                    raise CheckListIsAcceptExc
+                
+                updated_object = await uow.objects.update_by_filter({
+                    "status": ObjectStatusesEnum.ACT,
+                    "object_type": ObjectTypeEnum.ACT_OPENING           
+                }, id=object_id)
+                await uow.check_list.update_by_filter({
+                    "status": CheckListStatusEnum.ACCEPT
+                }, object_id=object_id)
+                await uow.acts.insert_by_data({
+                    "object_id": object_id,
+                    "status": ActStatusEnum.REQUIRED
+                })
+                
+            elif action == ChecklistObjectsActionEnum.DENY:
+                await uow.check_list.update_by_filter({
+                    "status": CheckListStatusEnum.REJECTED
+                }, object_id=object_id)
+                updated_object = await uow.objects.update_by_filter({
+                    "status": ObjectStatusesEnum.KNOWN,
+                    "object_type": ObjectTypeEnum.NOT_ACTIVE           
+                }, id=object_id)
+                
+            await uow.commit()
+            if updated_object:
+                return SObjectUpdated.model_validate(updated_object)
+            else:
+                return SObjectUpdated.model_validate(check_object)
     
     async def act_change(
         self, 
@@ -127,6 +191,8 @@ class ObjectsService:
         action: ActObjectsActionEnum
         ) -> SObjectUpdated:
         async with uow:
+            updated_object = None
+            
             check_object: Objects | None = await uow.objects.find_one_or_none(id=object_id)
             if not check_object:
                 raise ObjectNotFoundExc
@@ -137,25 +203,35 @@ class ObjectsService:
             
             if action == ActObjectsActionEnum.ACCEPT:
                 updated_object = await uow.objects.update_by_filter({
-                    "status": ObjectStatusesEnum.ACT,
-                    "object_type": ObjectTypeEnum.ACT_OPENING           
+                    "status": ObjectStatusesEnum.PLAN,
+                    "object_type": ObjectTypeEnum.ACTIVE           
                 }, id=object_id)
                 await uow.acts.update_by_filter({
-                    "status": ActStatusEnum.VERIFIED
+                    "status": ActStatusEnum.ACCEPT
                 }, object_id=object_id)
                 
             elif action == ActObjectsActionEnum.DENY:
-                ...
+                await uow.acts.update_by_filter({
+                    "status": ActStatusEnum.REJECTED
+                }, object_id=object_id)
+                updated_object = await uow.objects.update_by_filter({
+                    "status": ObjectStatusesEnum.ACT,
+                    "object_type": ObjectTypeEnum.ACT_OPENING           
+                }, id=object_id)
                 
             await uow.commit()
-            return SObjectUpdated.model_validate(updated_object)
+            
+            if updated_object:
+                return SObjectUpdated.model_validate(updated_object)
+            else:
+                return SObjectUpdated.model_validate(check_object)
     
     async def activate_object_check_list(
         self, 
         uow: UnitOfWork, 
         object_id: uuid.UUID,
         user_data: SActCreate
-    ) -> SActSuccessCreated:
+    ) -> SCheckListSuccessCreated:
         async with uow:
             check_object: Objects | None = await uow.objects.find_one_or_none(id=object_id)
             if not check_object:
@@ -168,9 +244,9 @@ class ObjectsService:
             if not check_contractor:
                 raise ContractorNotFoundExc
             
-            check_exists_act = await uow.acts.find_one_or_none(object_id=object_id)
-            if check_exists_act:
-                raise ActObjectIsExistsExc
+            check_exists_check_list = await uow.check_list.find_one_or_none(object_id=object_id)
+            if not check_exists_check_list:
+                raise CheckListObjectIsNotExistsExc
             
             await uow.objects.update_by_filter(
                 {
@@ -181,15 +257,14 @@ class ObjectsService:
                 id=object_id
             )
             
-            new_act: Acts = await uow.acts.insert_by_data({
-                "object_id": check_object.id,
-                "date_verification": user_data.date_verification,
-                "status": ActStatusEnum.NOT_VERIFIED
-            })
-            
+            new_check_list: CheckList = await uow.check_list.update_by_filter({
+                "status": CheckListStatusEnum.AWAITING,
+                "date_verification": user_data.date_verification
+            }, object_id=object_id)
+
             for doc in user_data.act_docx:
-                await uow.act_document.insert_by_data({
-                    "act_id": new_act.id,
+                await uow.check_list_document.insert_by_data({
+                    "checklist_id": new_check_list.id,
                     "code": doc.code,
                     "title": doc.title,
                     "status": doc.status,
@@ -197,7 +272,7 @@ class ObjectsService:
                 })
             
             await uow.commit()
-            return SActSuccessCreated.model_validate(new_act)
+            return SCheckListSuccessCreated.model_validate(new_check_list)
     
     async def get_all_objects_by_filter(
         self, 
@@ -270,17 +345,10 @@ class ObjectsService:
                     "geom": geom
                 }
             )
-            
-            # ИСКЛЮЧИТЕЛЬНО В РАМКАХ ХАКАТОНА
-            # -------
-            count = await uow.object_nfc.count_by_filter(object_id=new_object.id)
-            label = number_to_label_nfc(count + 1)
-            await uow.object_nfc.insert_by_data({
-                "nfc_uid": generate_nfc_uid(),
-                "object_id": new_object.id,
-                "label": label
+            await uow.check_list.insert_by_data({
+                "status": CheckListStatusEnum.REQUIRED,
+                "object_id": new_object.id
             })
-            # -------
             
             await uow.commit()
             return SObject(

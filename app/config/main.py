@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     COOKIE_SAMESITE: str = "lax"
     
     LLM_URL: str
+    
+    ACCESS_EXPIRES_AT_MIN: int = 480
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -10,6 +10,7 @@ from app.models.users import User
 from app.schemas.base import ErrorEnvelopeModel, SuccessResponseModel
 from app.schemas.nfc import (
     SNFCADD,
+    SNFCChange,
     SNFCCreate,
     SNFCDelete,
     SNFCHistoryObject,
@@ -38,6 +39,24 @@ async def create_nfc(
     `object_id` - id объекта для которого создаем новую nfc
     """
     return await NFCService().create(uow, user_data, object_id, user), 201
+
+@router.patch("/change/{nfc_id}/{object_id}", summary="Изменить название nfc", status_code=status.HTTP_200_OK)
+@api_exception_handler
+async def change_nfc(
+    uow: UOWDep, 
+    nfc_id: uuid.UUID,
+    object_id: uuid.UUID,
+    user_data: SNFCChange,
+    user: User = Depends(get_current_user)
+) -> Annotated[SuccessResponseModel[SNFCChange] | ErrorEnvelopeModel, Field(discriminator="status")]:
+    """
+    **Изменить название nfc**
+    
+    `nfc_id` - id nfc
+    
+    `object_id` - id объекта у которого изменяем nfc
+    """
+    return await NFCService().change_nfc(uow, nfc_id, object_id, user_data), 200
 
 
 @router.post("/verify/{object_id}", summary="Верификация по nfc", status_code=status.HTTP_201_CREATED)

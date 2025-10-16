@@ -7,7 +7,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.config.database import Base
-from app.models.enums import act_status_enum, document_status_enum, object_statuses_enum, object_type_enum
+from app.models.enums import (
+    act_status_enum,
+    check_list_status_enum,
+    document_status_enum,
+    object_statuses_enum,
+    object_type_enum,
+)
 
 
 class Objects(Base):
@@ -56,6 +62,7 @@ class Objects(Base):
     nfc_items = relationship("ObjectNFC", backref="object", lazy="selectin")
     responsible_user = relationship("User", lazy="joined")
     act = relationship("Acts", backref="object", uselist=False, lazy="joined")
+    check_list = relationship("CheckList", backref="object", uselist=False, lazy="joined")
     remarks_items = relationship("RemarksItem", back_populates="object")
     violations_items = relationship("ViolationsItem", back_populates="object")
     contractor = relationship("Company", foreign_keys=[contractor_id], lazy="selectin")
@@ -77,20 +84,31 @@ class Acts(Base):
     object_id: Mapped[uuid.UUID] = mapped_column(
         UUID, ForeignKey("objects.id", ondelete="CASCADE"), unique=True
     )
+    
+class CheckList(Base):
+    """Таблица для чек листа"""
+    
+    __tablename__ = "checklist"
+    
+    id: Mapped[int] = mapped_column(UUID, default=uuid.uuid4, primary_key=True)
+    status: Mapped[str] = mapped_column(check_list_status_enum)
+    object_id: Mapped[uuid.UUID] = mapped_column(
+        UUID, ForeignKey("objects.id", ondelete="CASCADE"), unique=True
+    )
     date_verification: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True)
+        TIMESTAMP(timezone=True), nullable=True
         )
     
-    documents = relationship("ActDocument", backref="act", lazy="selectin")
+    documents = relationship("CheckListDocument", backref="act", lazy="selectin")
     
-class ActDocument(Base):
+class CheckListDocument(Base):
     """Пункты документов в строительных актах"""
 
-    __tablename__ = "act_documents"
+    __tablename__ = "checklist_documents"
 
     id: Mapped[int] = mapped_column(UUID, default=uuid.uuid4, primary_key=True)
-    act_id: Mapped[uuid.UUID] = mapped_column(
-        UUID, ForeignKey("acts.id", ondelete="CASCADE")
+    checklist_id: Mapped[uuid.UUID] = mapped_column(
+        UUID, ForeignKey("checklist.id", ondelete="CASCADE")
     )
     # Номер пункта (например "1.1", "2.7")
     code: Mapped[str] = mapped_column(String(10))

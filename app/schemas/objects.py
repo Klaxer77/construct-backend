@@ -3,12 +3,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import ActStatusEnum, DocumentStatusEnum, ObjectStatusesEnum, ObjectTypeEnum
+from app.models.enums import ActStatusEnum, CheckListStatusEnum, DocumentStatusEnum, ObjectStatusesEnum, ObjectTypeEnum
 from app.schemas.company import ResponsibleUserSub
 from app.schemas.users import SUserCurrentSubObject
 
 
-class SActdocumentDetail(BaseModel):
+class SCheckListdocumentDetail(BaseModel):
     id: uuid.UUID
     code: str
     title: str
@@ -16,14 +16,13 @@ class SActdocumentDetail(BaseModel):
     description: str
     
     model_config = ConfigDict(from_attributes=True)
-class SActDetail(BaseModel):
+class SCheckListDetail(BaseModel):
     id: uuid.UUID
-    file_url: str | None
-    status: ActStatusEnum
+    status: CheckListStatusEnum
     date_verification: datetime
     responsible_fio: str | None = None
     contractor_title: str | None = None
-    documents: list[SActdocumentDetail]
+    documents: list[SCheckListdocumentDetail]
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -97,6 +96,11 @@ class SActObjectSub(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
     
+class SCheckListSub(BaseModel):
+    status: CheckListStatusEnum
+    
+    model_config = ConfigDict(from_attributes=True)
+    
 class SObjectsList(BaseModel):
     id: uuid.UUID
     using_id: str
@@ -109,6 +113,7 @@ class SObjectsList(BaseModel):
     date_delivery_verification: datetime
     responsible_user: ResponsibleUserSub | None
     act: SActObjectSub | None
+    check_list: SCheckListSub | None
     is_nfc: bool
     
     model_config = ConfigDict(from_attributes=True)
@@ -147,6 +152,12 @@ class SActSuccessCreated(BaseModel):
     id: uuid.UUID
     file_url: str | None
     status: ActStatusEnum
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class SCheckListSuccessCreated(BaseModel):
+    id: uuid.UUID
+    status: CheckListStatusEnum
     date_verification: datetime
     
     model_config = ConfigDict(from_attributes=True)

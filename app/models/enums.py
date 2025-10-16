@@ -14,6 +14,10 @@ class ViolationActionEnum(str, enum.Enum):
 class ActObjectsActionEnum(str, enum.Enum):
     ACCEPT = "accept"
     DENY = "deny"
+    
+class ChecklistObjectsActionEnum(str, enum.Enum):
+    ACCEPT = "accept"
+    DENY = "deny"
 
 class UserRoleEnum(str, enum.Enum):
     CONSTRUCTION_CONTROL = "construction_control"
@@ -46,8 +50,16 @@ class DocumentStatusEnum(str, enum.Enum):
     NOT_REQUIRED = "not_required"
     
 class ActStatusEnum(str, enum.Enum):
-    VERIFIED = "verified"
-    NOT_VERIFIED = "not_verified"
+    REQUIRED = "required"
+    AWAITING = "awaiting"
+    REJECTED = "rejected"
+    ACCEPT = "accept"
+    
+class CheckListStatusEnum(str, enum.Enum):
+    REQUIRED = "required"
+    AWAITING = "awaiting"
+    REJECTED = "rejected"
+    ACCEPT = "accept"
     
 class RemarksTypeFilter(str, enum.Enum):
     ALL = "all"
@@ -80,6 +92,7 @@ object_statuses_enum = Enum(ObjectStatusesEnum, name="object_statuses_enum")
 object_type_enum = Enum(ObjectTypeEnum, name="object_type_enum")
 document_status_enum = Enum(DocumentStatusEnum, name="document_status_enum")
 act_status_enum = Enum(ActStatusEnum, name="act_status_enum")
+check_list_status_enum = Enum(CheckListStatusEnum, name="check_list_status_enum")
 remark_status_enum = Enum(RemarkStatusEnum, name="remark_status_enum")
 violation_status_enum = Enum(ViolationStatusEnum, name="violation_status_enum")
 

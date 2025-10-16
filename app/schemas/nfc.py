@@ -26,7 +26,11 @@ class SNFCDelete(BaseModel):
     model_config = ConfigDict(from_attributes=True)    
     
 class SNFCADD(BaseModel):
-    access_expires_at: datetime
+    id: uuid.UUID
+    object_id: uuid.UUID
+    nfc_uid: str
+    label: str
+    created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -60,5 +64,10 @@ class SNFCHistoryObjectList(BaseModel):
     nfc_uid: str
     label: str
     created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class SNFCChange(BaseModel):
+    label: str
     
     model_config = ConfigDict(from_attributes=True)

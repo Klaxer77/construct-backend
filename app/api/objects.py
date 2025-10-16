@@ -6,14 +6,15 @@ from pydantic import Field
 
 from app.dependencies.unitofwork import UOWDep
 from app.dependencies.users import get_current_user
-from app.models.enums import ActObjectsActionEnum, ObjectTypeEnum, ObjectTypeFilter
+from app.models.enums import ActObjectsActionEnum, ChecklistObjectsActionEnum, ObjectTypeEnum, ObjectTypeFilter
 from app.models.users import User
 from app.schemas.base import ErrorEnvelopeModel, SuccessResponseModel
 from app.schemas.objects import (
     SActCreate,
-    SActDetail,
     SActSuccessCreated,
     SCategoriesObjects,
+    SCheckListDetail,
+    SCheckListSuccessCreated,
     SCountObjects,
     SObject,
     SObjectCreate,
@@ -170,7 +171,7 @@ async def activate_object_check_list(
     user_data: SActCreate,
     object_id: uuid.UUID,
     user: User = Depends(get_current_user)
-) -> Annotated[SuccessResponseModel[SActSuccessCreated] | ErrorEnvelopeModel, Field(discriminator="status")]:
+) -> Annotated[SuccessResponseModel[SCheckListSuccessCreated] | ErrorEnvelopeModel, Field(discriminator="status")]:
     """
     **Создать чек лист активации объекта**
     
@@ -207,6 +208,27 @@ async def act_change(
     """
     return await ObjectsService().act_change(uow, object_id, action), 201
 
+@router.post(
+    "/checklist/change/{object_id}", 
+    summary="Принять или отменить чек лист объекта", 
+    status_code=status.HTTP_201_CREATED
+    )
+@api_exception_handler
+async def checklist_change(
+    uow: UOWDep, 
+    action: ChecklistObjectsActionEnum,
+    object_id: uuid.UUID,
+    user: User = Depends(get_current_user)
+) -> Annotated[SuccessResponseModel[SObjectUpdated] | ErrorEnvelopeModel, Field(discriminator="status")]:
+    """
+    **Принять или отменить чек лист объекта**
+    
+    `object_id` - id объекта которого изменяем
+    
+    `action` - действие принять или отменить
+    """
+    return await ObjectsService().checklist_change(uow, object_id, action), 201
+
 @router.get(
     "/checkList/{object_id}", 
     summary="Получить чек лист активации объекта", 
@@ -217,7 +239,7 @@ async def object_check_list(
     uow: UOWDep, 
     object_id: uuid.UUID,
     user: User = Depends(get_current_user)
-) -> Annotated[SuccessResponseModel[SActDetail] | ErrorEnvelopeModel, Field(discriminator="status")]:
+) -> Annotated[SuccessResponseModel[SCheckListDetail] | ErrorEnvelopeModel, Field(discriminator="status")]:
     """
     **Получить чек лист активации объекта**
     

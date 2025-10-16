@@ -35,8 +35,14 @@ app = FastAPI(
 
 for router in all_routers:
     app.include_router(router)
-
-origins = ["https://constructioncms.ru", "http://constructioncms.ru", settings.WEB_APP_URL]
+ 
+origins = [
+    "http://test.constructioncms.ru",
+    "https://test.constructioncms.ru", 
+    "https://constructioncms.ru", 
+    "http://constructioncms.ru", 
+    settings.WEB_APP_URL
+    ]
 
 app.add_middleware(
     CORSMiddleware,
