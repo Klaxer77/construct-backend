@@ -181,8 +181,10 @@ class SWorkChangeStatus(BaseModel):
     
 
 class SDetailStageWork(BaseModel):
+    id: uuid.UUID
     percent: float
     title: str
+    volume_percent: float
     status_main: StageProgressWorkMainStatusEnum
     status_second: StageProgressWorkSecondStatusEnum
     date_from: datetime

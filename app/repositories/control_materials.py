@@ -81,6 +81,7 @@ class StageProgressWorkRepository(SQLAlchemyRepository):
             })
 
         return {
+            "id": stage.id,
             "percent": float(stage.percent or 0),
             "title": stage.title,
             "status_main": stage.status_main,
