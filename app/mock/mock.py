@@ -1,17 +1,14 @@
 import json
 import time
-from datetime import datetime
 
 from sqlalchemy import insert
 
 from app.config.database import async_session_maker
 from app.config.main import settings
 from app.models.company import Company
-from app.models.control_materials import CategoriesMaterials
 from app.models.objects import ObjectsCategories
 from app.models.users import User
 from app.repositories.company import CompanyRepository
-from app.repositories.control_materials import CategoriesMaterialsRepository
 from app.repositories.objects import ObjectsCategoriesRepository
 from app.repositories.users import UsersRepository
 
@@ -32,11 +29,6 @@ async def init_app():
         users = open_mock_json("users_dev")
         
     object_categories = open_mock_json("object_categories")
-    categories_materials = open_mock_json("categories_materials")
-    
-    for category_material in categories_materials:
-        category_material["date_from"] = datetime.strptime(category_material["date_from"], "%Y-%m-%dT%H:%M:%S.%f%z")
-        category_material["date_to"] = datetime.strptime(category_material["date_to"], "%Y-%m-%dT%H:%M:%S.%f%z")
 
     async with async_session_maker() as session:
         for company in companies:
@@ -59,12 +51,5 @@ async def init_app():
                 )
             if not find_object_category:
                 await session.execute(insert(ObjectsCategories).values(object_category))
-                
-        for category_material in categories_materials:
-            find_category_material = await CategoriesMaterialsRepository(session).find_one_or_none(
-                id=category_material["id"]
-                )
-            if not find_category_material:
-                await session.execute(insert(CategoriesMaterials).values(category_material))
         
         await session.commit()

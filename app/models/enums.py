@@ -18,6 +18,10 @@ class ActObjectsActionEnum(str, enum.Enum):
 class ChecklistObjectsActionEnum(str, enum.Enum):
     ACCEPT = "accept"
     DENY = "deny"
+    
+class WorkActionEnum(str, enum.Enum):
+    ACCEPT = "accept"
+    DENY = "deny"
 
 class UserRoleEnum(str, enum.Enum):
     CONSTRUCTION_CONTROL = "construction_control"
@@ -86,6 +90,26 @@ class ViolationStatusEnum(str, enum.Enum):
     NOT_FIXED = "not_fixed"
     REVIEW = "review"
     
+class StageProgressWorkStatusEnum(str, enum.Enum):
+    NOT_STARTED = "not_started"
+    WORK = "work"
+    REVIEW = "review"
+    
+class StageProgressWorkMainStatusEnum(str, enum.Enum):
+    NOT_STARTED = "not_started"
+    WORK = "work"
+    PASSED = "passed"
+    
+class StageProgressWorkSecondStatusEnum(str, enum.Enum):
+    NONE = "none"
+    AWAITING_VERIFICATION = "awaiting_verification"
+    VERIFICATION_REJECTED = "verification_rejected"
+    
+class ListOfWorksStatusEnum(str, enum.Enum):
+    PASSED = "passed"
+    AWAITING_VERIFICATION = "awaiting_verification"
+    VERIFICATION_REJECTED = "verification_rejected"
+    
 
 user_role_enum = Enum(UserRoleEnum, name="user_role_enum")
 object_statuses_enum = Enum(ObjectStatusesEnum, name="object_statuses_enum")
@@ -95,4 +119,6 @@ act_status_enum = Enum(ActStatusEnum, name="act_status_enum")
 check_list_status_enum = Enum(CheckListStatusEnum, name="check_list_status_enum")
 remark_status_enum = Enum(RemarkStatusEnum, name="remark_status_enum")
 violation_status_enum = Enum(ViolationStatusEnum, name="violation_status_enum")
-
+stage_progress_work_main_status_enum = Enum(StageProgressWorkMainStatusEnum, name="stage_progress_work_main_status_enum") #noqa
+stage_progress_work_second_status_enum = Enum(StageProgressWorkSecondStatusEnum, name="stage_progress_work_second_status_enum") #noqa
+list_of_works_status_enum = Enum(ListOfWorksStatusEnum, name="list_of_works_status_enum")

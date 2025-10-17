@@ -3,6 +3,13 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.models.enums import (
+    ListOfWorksStatusEnum,
+    StageProgressWorkMainStatusEnum,
+    StageProgressWorkSecondStatusEnum,
+    WorkActionEnum,
+)
+
 
 class SLlmResult(BaseModel):
     sender: str | None = None
@@ -49,6 +56,9 @@ class SCreateMaterials(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
     
+class SProgressObject(BaseModel):
+    progress: float
+    
 class SMaterials(SCreateMaterials):
     id: uuid.UUID
     created_at: datetime
@@ -88,5 +98,98 @@ class SMaterialsListDetail(BaseModel):
     carrier: str
     vehicle: str
     created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class SStageProgressWorkCreate(BaseModel):
+    title: str
+    date_from: datetime
+    date_to: datetime
+    kpgz: str
+    volume: int
+    unit: str
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class SMaterialsWorkCreate(BaseModel):
+    title: str
+    date_from: datetime
+    date_to: datetime
+    stages: list[SStageProgressWorkCreate]
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class SStageProgressWorkRead(BaseModel):
+    id: uuid.UUID
+    title: str
+    date_from: datetime
+    date_to: datetime
+    status_main: StageProgressWorkMainStatusEnum
+    status_second: StageProgressWorkSecondStatusEnum
+    kpgz: str
+    volume: int
+    unit: str
+    percent: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SMaterialsWorkRead(BaseModel):
+    id: uuid.UUID
+    title: str
+    date_from: datetime
+    date_to: datetime
+    percent: float
+    stages: list[SStageProgressWorkRead]
+
+    model_config = ConfigDict(from_attributes=True)
+    
+class SWorkBegin(BaseModel):
+    result: str
+
+    model_config = ConfigDict(from_attributes=True)
+    
+class SWorkAction(BaseModel):
+    result: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class SPhotosListOfWorks(BaseModel):
+    file_path: str
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class SWorkDelivery(BaseModel):
+    id: str
+    volume: int
+    status: ListOfWorksStatusEnum
+    desc: str
+    created_at: datetime
+    photos: list[SPhotosListOfWorks]
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class SCreateDeliveryWorks(BaseModel):
+    volume: int
+    desc: str
+    photos_keys: list[str] = []
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class SWorkChangeStatus(BaseModel):
+    action: WorkActionEnum
+    
+
+class SDetailStageWork(BaseModel):
+    percent: float
+    title: str
+    status_main: StageProgressWorkMainStatusEnum
+    status_second: StageProgressWorkSecondStatusEnum
+    date_from: datetime
+    date_to: datetime
+    kpgz: str
+    volume: int
+    unit: str
+    list_of_works: list[SWorkDelivery]
     
     model_config = ConfigDict(from_attributes=True)

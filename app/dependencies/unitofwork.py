@@ -4,7 +4,15 @@ from fastapi import Depends
 
 from app.config.database import async_session_maker
 from app.repositories.company import CompanyRepository
-from app.repositories.control_materials import CategoriesMaterialsRepository, MaterialsRepository
+from app.repositories.control_materials import (
+    ListOfWorksRepository,
+    MaterialsRepository,
+    ProgressWorkRepository,
+    StageProgressWorkPhotoRepository,
+    StageProgressWorkRejectionPhotoRepository,
+    StageProgressWorkRejectionRepository,
+    StageProgressWorkRepository,
+)
 from app.repositories.images import ImagesRepository
 from app.repositories.nfc import HistoryObjectNFCRepository, ObjectNFCRepository
 from app.repositories.objects import (
@@ -55,7 +63,6 @@ class UnitOfWork:
         self.violation_photo = ViolationPhotoRepository(self.session)
         self.violations_item = ViolationsItemRepository(self.session)
         self.violations = ViolationsRepository(self.session)
-        self.categories_materials = CategoriesMaterialsRepository(self.session)
         self.materials = MaterialsRepository(self.session)
         self.user_object_access = UserObjectAccessRepository(self.session)
         self.remark_answer = RemarkAnswerRepository(self.session)
@@ -63,6 +70,12 @@ class UnitOfWork:
         self.violation_answer = ViolationAnswerRepository(self.session)
         self.violation_answer_file = ViolationAnswerFileRepository(self.session)
         self.check_list = CheckListRepository(self.session)
+        self.stage_progress_work_photo = StageProgressWorkPhotoRepository(self.session)
+        self.stage_progress_work_rejection_photo = StageProgressWorkRejectionPhotoRepository(self.session)
+        self.stage_progress_work_rejection = StageProgressWorkRejectionRepository(self.session)
+        self.list_of_works = ListOfWorksRepository(self.session)
+        self.stage_progress_work = StageProgressWorkRepository(self.session)
+        self.progress_work = ProgressWorkRepository(self.session)
         
     async def __aexit__(self, *args):
         await self.rollback()
